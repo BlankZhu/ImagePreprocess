@@ -5,8 +5,8 @@ ImageGenreator is a class that help you preprocess the images in order to get
 OPERATIONS:
   1. Histogram Equalization.
     (This may help you get a better perform image)
-  2. ZAC Whitening
-    (Helps to get a ZAC Whitened image)
+  2. ZCA Whitening
+    (Helps to get a ZCA Whitened image)
   3. Random Rotation
     (Randomly rotate the image by given range)
   4. Random Vertical Moving
@@ -34,25 +34,27 @@ FUNTIONS:
     ImageGenerator::ImageGenerator()
     This constructor initialize a default ImageGenerator.
     It WILL apply Histogram Equalization.
-    It WILL apply ZAC Whitening.
+    It WILL apply ZCA Whitening.
     It WILL randomly rotate the image in [0, 2pi).
     It WILL vertically move the image in [- (max_height) / 2, max_height / 2).
     It WILL horizontally move the image in [- (max_width) / 2, max_width / 2).
     It WILL exchange the channels randomly.
     It WILL use zero padding as default filling method.
+    It WILL use vertical flip & horizontal flip
     It WILL NOT add any noise on the image
     It WILL resize the image in [0.5, 1)
-  2. ImageGenerator::ImageGenerator(bool hist_eqlize, bool ZAC_whiten, 
+  2. ImageGenerator::ImageGenerator(bool hist_eqlize, bool ZCA_whiten, 
                                     double rotate_min, double rotate_max,
                                     int v_move_min, int v_move_max,
                                     int h_move_min, int h_move_max,
                                     bool exchange_chan,
                                     int filling_method, int cval,
+                                    bool v_flip, bool h_flip,
                                     vector<function<(void(Mat&, Mat&))>> noises,
                                     double rsz_min, double rsz_max)
     This constructor initialize a fixed ImageGenerator.
     It may apply Histogram Equalization according to hist_eqlize.
-    It may apply ZAC Whitening according to ZAC_whiten.
+    It may apply ZCA Whitening according to ZCA_whiten.
     It WILL randomly rotate the image in [rotate_min, rotate_max).
         ..if you dont want to rotate, set rotate_min == rotate_max
     It WILL vertically move the image in [v_move_min, v_move_max).
@@ -63,6 +65,7 @@ FUNTIONS:
     It WILL use filling method specifed by filling_method.
         ..if you use constant filling, you should specify cval,
         ..otherwise the cval is useless, you can set a lucky number you like.
+    It WILL use vertical flip & horizontal flip according to v_flip & h_flip.
     It WILL add noises to image.
         ..if you dont want to add noise, use an empty vector
     It WILL resize the image in [rsz_min, rsz_max).
