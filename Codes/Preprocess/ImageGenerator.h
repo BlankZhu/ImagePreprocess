@@ -16,60 +16,65 @@ public:
 	/* \brief
 		This constructor initialize a default ImageGenerator.
 		It WILL apply Histogram Equalization.
-		It WILL apply ZCA Whitening.
-		It WILL randomly rotate the image in [0, 2pi).
-		It WILL vertically move the image in [- (max_height) / 2, max_height / 2).
-		It WILL horizontally move the image in [- (max_width) / 2, max_width / 2).
-		It WILL exchange the channels randomly.
+		It WILL apply Mean Normalization.
+		It WILL randomly rotate the image in [0, 360.0).
+		It WILL vertically move the image in [-50, 50).
+		It WILL horizontally move the image in [-50, 50).
+		It WILL exchange the RGB channels.
 		It WILL use zero padding as default filling method.
 		It WILL NOT add any noise on the image
-		It WILL NOT resize the image
+		It WILL resize the image in [0.5, 1.5)
 	*/
 	ImageGenerator();
 
 	// other constructor
 	/* \brief
 		This constructor initialize a fixed ImageGenerator.
-		It may apply Histogram Equalization according to hist_eqlize.
-		It may apply ZCA Whitening according to ZCA_whiten.
+		It WILL apply Histogram Equalization according to hist_eqlize.
+		It WILL apply Mean Normalization according to mean_normalization.
 		It WILL randomly rotate the image in [rotate_min, rotate_max).
-			..if you dont want to rotate, set rotate_min == rotate_max
+			..if you dont want to rotate, set rotate == false
 		It WILL vertically move the image in [v_move_min, v_move_max).
-			..if you dont want to move, set v_move_min == v_move_max
+			..if you dont want to move, set v_move == false
 		It WILL horizontally move the image in [h_move_min, h_move_max).
-			..if you dont want to move, set h_move_min == h_move_max
-		It may exchange the channels randomly according to exchange_chan.
+			..if you dont want to move, set h_move == false
+		It may exchange the channels according to exchange_chan.
 		It WILL use filling method specifed by filling_method.
 			..if you use constant filling, you should specify cval,
 			..otherwise the cval is useless, you can set a lucky number you like.
 		It WILL add noises to image.
 			..if you dont want to add noise, use an empty vector
 		It WILL resize the image in [rsz_min, rsz_max).
-			..if you dont want to resize, set rsz_min == rsz_max
-	 * \param[in] bool hist_equlize
-	 * \param[in] bool ZCA_whiten
-	 * \param[in] double rotate_min
-	 * \param[in] double rotate_max
-	 * \param[in] int v_move_min
-	 * \param[in] int v_move_max
-	 * \param[in] int h_move_min
-	 * \param[in] int h_move_max
-	 * \param[in] bool v_flip
-	 * \param[in] int h_flip
-	 * \param[in] int cval
-	 * \param[in] bool hist_equlize
-	 * \param[in] bool ZCA_whiten
-	 * \param[in] vector<function<(void(Mat&, Mat&))>> noises
-	 * \param[in] double rsz_min
-	 * \param[in] double rsz_max
+			..if you dont want to resize, set resize == false
+	 * \param[in] bool hist_equlize use or not
+	 * \param[in] bool mean_normalization use or not
+	 * \param[in] bool rotate use or not
+	 * \param[in] double rotate_min minimun degree
+	 * \param[in] double rotate_max maximun degree
+	 * \param[in] bool v_move use vertical move or not
+	 * \param[in] int v_move_min minimun pixels
+	 * \param[in] int v_move_max maximun pixels
+	 * \param[in] bool h_move use horizontal move or not
+	 * \param[in] int h_move_min mimimun pixels
+	 * \param[in] int h_move_max maximun pixels
+	 * \param[in] bool exchange_chan change channel or not
+	 * \param[in] int filling_method the filling method, see marcos like BORDER_CONSTANT in OpenCV
+	 * \param[in] int cval pixel Scalar for constatn padding
+	 * \param[in] bool v_flip use vertical flip or not
+	 * \param[in] bool h_flip use horizontal flip or not
+	 * \param[in] vector<function<(void(Mat&, Mat&))>> noises noises to apply
+	 * \param[in] bool resize use resize or not
+	 * \param[in] double rsz_min minimun proportion
+	 * \param[in] double rsz_max maximun proportion
 	*/
-	ImageGenerator(bool hist_equlize, bool ZCA_whiten, 
-				   double rotate_min, double rotate_max,
-				   int v_move_min, int v_move_max, int h_move_min, int h_move_max,
+	ImageGenerator(bool hist_equlize, bool mean_normalization,
+				   bool rotate, double rotate_min, double rotate_max,
+				   bool v_move, int v_move_min, int v_move_max, 
+				   bool h_move, int h_move_min, int h_move_max,
 				   bool exchange_chan, int filling_method, int cval,
 				   bool v_flip, bool h_flip,
 				   std::vector<std::function<void(cv::Mat&)>> noises,
-				   double rsz_min, double rsz_max);
+				   bool resize, double rsz_min, double rsz_max);
 
 	// Destructor
 	~ImageGenerator();
@@ -84,22 +89,34 @@ public:
 	*/
 	void gen(cv::Mat &src, int gen_amount, std::vector<cv::Mat> &res);
 
+	/* \brief
+		A debug function, which just tests the tool function
+	*/
+	void debug_gen(cv::Mat &src, std::vector<cv::Mat> &res);
+
+// private:
 private:
 	// data members
 	bool hist_eqlize_;		// use histogram equalization or not
-	bool ZCA_whiten_;		// use ZCA whiten or not
+	// bool ZCA_whiten_;		// use ZCA whiten or not, TODO
+	bool mean_normalization_; //use mean normalization or not
+	// bool variance_normalization_; use variance normalization or not, TODO
+	bool rotate_;
 	double rtt_min_;		// min rotate rate, must be bigger than 0
 	double rtt_max_;		// max rotate rate, must be smaller than 360.0
-	int v_min_;		// min vertical move steps, must be larger than -(width / 2)
-	int v_max_;		// max vertical move steps, must be smaller than (width / 2)
-	int h_min_;		// min horizontal move steps, must be larger than -(width / 2)
-	int h_max_;		// max horizontal move steps, must be smaller than (width / 2)
+	bool v_move_;
+	int v_min_;		// min vertical move steps, suggest to be larger than -(width / 2)
+	int v_max_;		// max vertical move steps, suggest to be smaller than (width / 2)
+	bool h_move_;
+	int h_min_;		// min horizontal move steps, suggest to be larger than -(width / 2)
+	int h_max_;		// max horizontal move steps, suggest to be smaller than (width / 2)
 	bool exchange_chan_;	// use channel exchange or not
 	int filling_method_;	// filling method for move, rotate operation, use cv::BORDER_xxxx
 	int cval_;				// constant for constfilling method
 	bool v_flip_;			// use vertical flip or not
 	bool h_flip_;			// use horizontal flip or not
 	std::vector<std::function<void(cv::Mat&)>> noises_;	// user-defined noises
+	bool resize_;
 	double rsz_min_;			// min resize proportion, must be larger then 0
 	double rsz_max_;			// max resize proportion, must be larger then 0
 
@@ -118,7 +135,15 @@ private:
 		\param[in] cv::Mat &src source Mat
 		\param[in] std::vector<cv::Mat> &res vector to store result
 	*/
-	void ZCAWhiten(cv::Mat &src, std::vector<cv::Mat> &res);
+	// void ZCAWhiten(cv::Mat &src, std::vector<cv::Mat> &res);
+
+	/* \brief
+		MeanNormalize will apply mean normalization operation to the src image
+		..and then push the result to the res vector.
+		\param[in] cv::Mat &src source Mat
+		\param[in] std::vector<cv::Mat> &res vector to store result
+	*/
+	void MeanNormalize(cv::Mat &src, std::vector<cv::Mat> &res);
 
 	/* \brief
 		Rotate will apply rotate operation with random angle
@@ -168,6 +193,13 @@ private:
 		\param[in] std::vector<cv::Mat> &res vector to store result
 	*/
 	void ChangeChannel(cv::Mat &src, std::vector<cv::Mat> &res);
+	/* \brief
+		ShiftChannel is a helper function of ChangeChannel
+		It shift all the channel to its right. (Well, in RGB form, not BGR)
+		\param[in] cv::Mat &src source Mat
+		\param[in] cv::Mat &dst destination Mat
+	*/
+	void ShiftChannel(cv::Mat &src, cv::Mat &dst);
 
 	/* \brief
 		VFlip will vertically flip the source image to create a new one,
