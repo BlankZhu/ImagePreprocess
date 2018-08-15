@@ -81,13 +81,15 @@ public:
 
 	// member function
 	/* \brief
-	    This member function will generate given amount of mat from input_mat,
+	    This member function will generate images
 		.. and store the result in the res vector.
+		If you want more different images, try using this function
+		.. one more time.(Though, some effect is fixed and stay unchange).
 	 * \param[in] Mat& src src image
-	 * \param[in] int gen_amount amount to generate
-	 * \param[in] std::vector<cv::Mat> &res to store the generated images
+	 * \param[in] std::vector<cv::Mat> &res to store the generated images, 
+		.. and the first image is the original one.
 	*/
-	void gen(cv::Mat &src, int gen_amount, std::vector<cv::Mat> &res);
+	void gen(cv::Mat &src, std::vector<cv::Mat> &res);
 
 	/* \brief
 		A debug function, which just tests the tool function

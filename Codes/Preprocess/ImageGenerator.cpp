@@ -9,6 +9,7 @@
 
 #include <random>
 #include <ctime>
+#include <list>
 
 ImageGenerator::ImageGenerator() :
 	hist_eqlize_(true), mean_normalization_(true),
@@ -56,7 +57,7 @@ ImageGenerator::HistEqualize(cv::Mat &src, std::vector<cv::Mat> &res)
 	if (src.channels() == 1)
 	{
 		cv::equalizeHist(src, tmp);
-		res.push_back(tmp);
+		res.push_back(tmp.clone());
 	}
 	if (src.channels() == 3)
 	{
@@ -72,7 +73,7 @@ ImageGenerator::HistEqualize(cv::Mat &src, std::vector<cv::Mat> &res)
 		// merge
 		cv::merge(channels, tmp);
 
-		res.push_back(tmp);
+		res.push_back(tmp.clone());
 	}
 	return;
 }
@@ -133,7 +134,7 @@ ImageGenerator::MeanNormalize(cv::Mat &src, std::vector<cv::Mat> &res)
 		}
 	}
 
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 
 	return;
 }
@@ -195,7 +196,7 @@ ImageGenerator::Rotate(cv::Mat &src, std::vector<cv::Mat> &res,
 	tmp = cv::Mat(tmp, rect);
 
 	// push to res
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void 
@@ -240,7 +241,7 @@ ImageGenerator::VMove(cv::Mat & src, std::vector<cv::Mat>& res,
 	// do affine transform
 	cv::warpAffine(tmp, tmp, warp_mat, tmp.size());
 
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void
@@ -285,37 +286,37 @@ ImageGenerator::HMove(cv::Mat & src, std::vector<cv::Mat>& res,
 	// do affine transform
 	cv::warpAffine(tmp, tmp, warp_mat, tmp.size());
 
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void 
 ImageGenerator::ChangeChannel(cv::Mat & src, std::vector<cv::Mat>& res)
 {
 	CV_Assert(!src.empty());
+	cv::Mat tmp_src = src.clone();
 
-	// to store the result image
-
-	if (src.channels() == 1)
+	if (tmp_src.channels() == 1)
 	{
 		// Why do you exhange the channel of a grey scale image?
 		return;
 	}
-	if (src.channels() == 3)
+	if (tmp_src.channels() == 3)
 	{
 		uchar tmp_ch_val = 0;
+
 
 		// OK, let's do some dirty and stupid work
 		cv::Mat tmp1;
 		ShiftChannel(src, tmp1);
-		res.push_back(tmp1);
+		res.push_back(tmp1.clone());
 
 		cv::Mat tmp2;
 		ShiftChannel(tmp1, tmp2);
-		res.push_back(tmp2);
+		res.push_back(tmp2.clone());
 
 		// RGB -> RBG, we now change a sequence
 		cv::Mat tmp3;
-		src.copyTo(tmp3);
+		tmp_src.copyTo(tmp3);
 		auto it = tmp3.begin<cv::Vec3b>();
 		auto it_end = tmp3.end<cv::Vec3b>();
 		for (; it != it_end; ++it)
@@ -324,16 +325,16 @@ ImageGenerator::ChangeChannel(cv::Mat & src, std::vector<cv::Mat>& res)
 			(*it)[1] = (*it)[2];
 			(*it)[2] = tmp_ch_val;
 		}
-		res.push_back(tmp3);
+		res.push_back(tmp3.clone());
 
 		// continue our dirty work
 		cv::Mat tmp4;
 		ShiftChannel(tmp3, tmp4);
-		res.push_back(tmp4);
+		res.push_back(tmp4.clone());
 
 		cv::Mat tmp5;
 		ShiftChannel(tmp4, tmp5);
-		res.push_back(tmp5);
+		res.push_back(tmp5.clone());
 	}
 
 	return;
@@ -369,7 +370,7 @@ ImageGenerator::VFlip(cv::Mat & src, std::vector<cv::Mat>& res)
 	cv::flip(src, tmp, 0);
 
 	// push to res
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void
@@ -383,7 +384,7 @@ ImageGenerator::HFlip(cv::Mat & src, std::vector<cv::Mat>& res)
 	cv::flip(src, tmp, 1);
 
 	// push to res
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void 
@@ -397,7 +398,7 @@ ImageGenerator::ApplyNoise(cv::Mat & src,
 		cv::Mat tmp;
 		src.copyTo(tmp);
 		(noises[cnt])(tmp);
-		res.push_back(tmp);
+		res.push_back(tmp.clone());
 	}
 }
 
@@ -426,13 +427,91 @@ ImageGenerator::Resize(cv::Mat & src, std::vector<cv::Mat>& res,
 		cv::Size(static_cast<size_t>(src.cols * resize_rate),
 			static_cast<size_t>(src.rows * resize_rate)));
 	
-	res.push_back(tmp);
+	res.push_back(tmp.clone());
 }
 
 void
-ImageGenerator::gen(cv::Mat & src, int gen_amount, std::vector<cv::Mat>& res)
+ImageGenerator::gen(cv::Mat & src, std::vector<cv::Mat>& res)
 {
-	// TODO
+	CV_Assert(!src.empty());
+	res.clear();
+	res.push_back(src.clone());
+
+	// val to count the size of res
+	int tmp_sz = res.size();
+
+	// start generating
+	// HistEqulize
+	if (hist_eqlize_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			HistEqualize(res[idx], res);
+	}
+	// MeanNormalize
+	if (mean_normalization_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			MeanNormalize(res[idx], res);
+	}
+	// Rotate
+	if (rotate_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			Rotate(res[idx], res, rtt_min_, rtt_max_);
+	}
+	// vertical move
+	if (v_move_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			VMove(res[idx], res, v_min_, v_max_);
+	}
+	// horizontal move
+	if (h_move_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			VMove(res[idx], res, h_min_, h_max_);
+	}
+	// change channel
+	if (exchange_chan_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			ChangeChannel(res[idx], res);
+	}
+	// vertical flip
+	if (v_flip_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			VFlip(res[idx], res);
+	}
+	// vertical flip
+	if (h_flip_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			HFlip(res[idx], res);
+	}
+	// apply noise
+	if (!noises_.empty())
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			ApplyNoise(res[idx], res, noises_);
+	}
+	// resize
+	if (resize_ == true)
+	{
+		tmp_sz = res.size();
+		for (size_t idx = 0; idx < tmp_sz; ++idx)
+			Resize(res[idx], res, rsz_min_, rsz_max_);
+	}
+
 	return;
 }
 
