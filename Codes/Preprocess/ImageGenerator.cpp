@@ -18,7 +18,7 @@ ImageGenerator::ImageGenerator() :
 	h_move_(true), h_min_(-50), h_max_(50),
 	exchange_chan_(true),
 	filling_method_(cv::BORDER_CONSTANT), cval_(0),
-	noises_(std::vector<std::function<void(cv::Mat&)>>()),
+	noises_(std::vector<std::shared_ptr<Noise>>()),
 	resize_(true), rsz_min_(0.5), rsz_max_(1.5)
 {
 }
@@ -29,7 +29,7 @@ ImageGenerator::ImageGenerator(bool hist_equlize, bool mean_normalization,
 	bool h_move, int h_move_min, int h_move_max,
 	bool exchange_chan, int filling_method, int cval,
 	bool v_flip, bool h_flip,
-	std::vector<std::function<void(cv::Mat&)>> noises,
+	std::vector<std::shared_ptr<Noise>> noises,
 	bool resize, double rsz_min, double rsz_max) : 
 	hist_eqlize_(hist_equlize), mean_normalization_(mean_normalization),
 	rotate_(rotate), rtt_min_(rotate_min), rtt_max_(rotate_max),
@@ -390,14 +390,14 @@ ImageGenerator::HFlip(cv::Mat & src, std::vector<cv::Mat>& res)
 void 
 ImageGenerator::ApplyNoise(cv::Mat & src, 
 	std::vector<cv::Mat>& res, 
-	std::vector<std::function<void(cv::Mat&)>>& noises)
+	std::vector<std::shared_ptr<Noise>>& noises)
 {
 	// apply nosies
 	for (size_t cnt = 0; cnt < noises.size(); ++cnt)
 	{
 		cv::Mat tmp;
 		src.copyTo(tmp);
-		(noises[cnt])(tmp);
+		noises[cnt]->ApplyNoise(tmp, tmp);
 		res.push_back(tmp.clone());
 	}
 }
@@ -526,6 +526,14 @@ void ImageGenerator::debug_gen(cv::Mat & src, std::vector<cv::Mat>& res)
 	// ChangeChannel(src, res);	 TEST GOOD!
 	// VFlip(src, res);			 TEST GOOD!
 	// HFlip(src, res);			 TEST GOOD!
-	// ApplyNoise(src, noises);	 TODO!!!
+
+	/*	TEST GOOD!
+		std::vector<std::shared_ptr<Noise>> n;
+		std::shared_ptr<Noise> g_n(new PeriodicNoise(false));
+		n.push_back(g_n);
+		ApplyNoise(src, res, n);
+	*/
+
+
 	// Resize(src, res, 0.5, 2.0);	TEST GOOD!
 }

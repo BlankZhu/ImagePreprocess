@@ -2,9 +2,12 @@
 
 #include <vector>
 #include <functional>
-#include <opencv2/core.hpp>
+#include <memory>
 #include <cmath>
 
+#include <opencv2/core.hpp>
+
+#include "Noise.h"
 
 class ImageGenerator
 {
@@ -62,7 +65,7 @@ public:
 	 * \param[in] int cval pixel Scalar for constatn padding
 	 * \param[in] bool v_flip use vertical flip or not
 	 * \param[in] bool h_flip use horizontal flip or not
-	 * \param[in] vector<function<(void(Mat&, Mat&))>> noises noises to apply
+	 * \param[in] vector<shared_ptr<Noise>> noises noises to apply
 	 * \param[in] bool resize use resize or not
 	 * \param[in] double rsz_min minimun proportion
 	 * \param[in] double rsz_max maximun proportion
@@ -73,7 +76,7 @@ public:
 				   bool h_move, int h_move_min, int h_move_max,
 				   bool exchange_chan, int filling_method, int cval,
 				   bool v_flip, bool h_flip,
-				   std::vector<std::function<void(cv::Mat&)>> noises,
+				   std::vector<std::shared_ptr<Noise>> noises,
 				   bool resize, double rsz_min, double rsz_max);
 
 	// Destructor
@@ -117,7 +120,7 @@ private:
 	int cval_;				// constant for constfilling method
 	bool v_flip_;			// use vertical flip or not
 	bool h_flip_;			// use horizontal flip or not
-	std::vector<std::function<void(cv::Mat&)>> noises_;	// user-defined noises
+	std::vector<std::shared_ptr<Noise>> noises_;	// user-defined noises
 	bool resize_;
 	double rsz_min_;			// min resize proportion, must be larger then 0
 	double rsz_max_;			// max resize proportion, must be larger then 0
@@ -226,9 +229,9 @@ private:
 		If the length of noises is 0, it wont do anything.
 		\param[in] cv::Mat &src source Mat
 		\param[in] std::vector<cv::Mat> &res vector to store result
-		\param[in] std::vector<std::function<void(cv::Mat&)>>& noises vector to store noises
+		\param[in] std::vector<std::shared_ptr<Noise>>& noises vector to store noises
 	*/
-	void ApplyNoise(cv::Mat &src, std::vector<cv::Mat> &res, std::vector<std::function<void(cv::Mat&)>>& noises);
+	void ApplyNoise(cv::Mat &src, std::vector<cv::Mat> &res, std::vector<std::shared_ptr<Noise>>& noises);
 
 	/* \brief
 		Resize randomly resize to the scale between rsz_min & rsz_max.
