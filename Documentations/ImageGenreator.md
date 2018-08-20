@@ -32,8 +32,8 @@ OPERATIONS:
 
 APIs:
 FUNTIONS:
-  1. Default Constructor
-    ImageGenerator::ImageGenerator()
+  1. ImageGenerator::ImageGenerator()
+    Default Constructor
     This constructor initialize a default ImageGenerator.
 		It WILL apply Histogram Equalization.
 		It WILL apply Mean Normalization.
@@ -44,8 +44,7 @@ FUNTIONS:
 		It WILL use zero padding as default filling method.
 		It WILL NOT add any noise on the image.
 		It WILL resize the image in [0.5, 1.5). (proportion)
-  2. Other Constructor
-    ImageGenerator(bool hist_equlize, bool mean_normalization,
+  2. ImageGenerator(bool hist_equlize, bool mean_normalization,
 				   bool rotate, double rotate_min, double rotate_max,
 				   bool v_move, int v_move_min, int v_move_max, 
 				   bool h_move, int h_move_min, int h_move_max,
@@ -53,6 +52,7 @@ FUNTIONS:
 				   bool v_flip, bool h_flip,
 				   std::vector<std::function<void(cv::Mat&)>> noises,
 				   bool resize, double rsz_min, double rsz_max);
+    Other Constructor.
     This constructor will initialize a fixed ImageGenerator.
 		It WILL apply Histogram Equalization according to hist_eqlize.
 		It WILL apply Mean Normalization according to mean_normalization.

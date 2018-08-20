@@ -111,7 +111,8 @@ PepperNoise::ApplyNoise(cv::Mat& src, cv::Mat& dst)
 
 	// engine for random number
 	std::default_random_engine engine(time(nullptr));
-	std::uniform_real_distribution<> dis(0.0, 1.0);
+	// std::uniform_real_distribution<> dis(0.0, 1.0);
+	std::bernoulli_distribution dis(probability_);
 
 	// travers the pixels
 	if (tmp.channels() == 1)
@@ -121,7 +122,7 @@ PepperNoise::ApplyNoise(cv::Mat& src, cv::Mat& dst)
 		while (it != it_end)
 		{
 			auto rate = dis(engine);
-			if (rate <= probability_)
+			if (rate == true)
 			{
 				// salt noise, apply black pixels
 				(*it) = 0;
@@ -136,7 +137,7 @@ PepperNoise::ApplyNoise(cv::Mat& src, cv::Mat& dst)
 		while (it != it_end)
 		{
 			auto rate = dis(engine);
-			if (rate <= probability_)
+			if (rate == true)
 			{
 				// salt noise, apply black pixels
 				(*it)[0] = 0;

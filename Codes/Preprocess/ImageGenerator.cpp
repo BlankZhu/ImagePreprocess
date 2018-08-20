@@ -304,7 +304,21 @@ ImageGenerator::ChangeChannel(cv::Mat & src, std::vector<cv::Mat>& res)
 	{
 		uchar tmp_ch_val = 0;
 
+		// RGB -> RBG, we now change a sequence
+		cv::Mat tmp3;
+		tmp_src.copyTo(tmp3);
+		auto it = tmp3.begin<cv::Vec3b>();
+		auto it_end = tmp3.end<cv::Vec3b>();
+		for (; it != it_end; ++it)
+		{
+			tmp_ch_val = (*it)[1];
+			(*it)[1] = (*it)[2];
+			(*it)[2] = tmp_ch_val;
+		}
+		res.push_back(tmp3.clone());
 
+		// if you want more channel changed image, uncomment the code below
+		/*
 		// OK, let's do some dirty and stupid work
 		cv::Mat tmp1;
 		ShiftChannel(src, tmp1);
@@ -335,6 +349,7 @@ ImageGenerator::ChangeChannel(cv::Mat & src, std::vector<cv::Mat>& res)
 		cv::Mat tmp5;
 		ShiftChannel(tmp4, tmp5);
 		res.push_back(tmp5.clone());
+		*/
 	}
 
 	return;
@@ -392,11 +407,14 @@ ImageGenerator::ApplyNoise(cv::Mat & src,
 	std::vector<cv::Mat>& res, 
 	std::vector<std::shared_ptr<Noise>>& noises)
 {
+	cv::Mat tmp_src;
+	src.copyTo(tmp_src);
+
 	// apply nosies
 	for (size_t cnt = 0; cnt < noises.size(); ++cnt)
 	{
 		cv::Mat tmp;
-		src.copyTo(tmp);
+		tmp_src.copyTo(tmp);
 		noises[cnt]->ApplyNoise(tmp, tmp);
 		res.push_back(tmp.clone());
 	}
@@ -437,79 +455,56 @@ ImageGenerator::gen(cv::Mat & src, std::vector<cv::Mat>& res)
 	res.clear();
 	res.push_back(src.clone());
 
-	// val to count the size of res
-	int tmp_sz = res.size();
-
-	// start generating
+	// start generating, this will mix all the effects together
 	// HistEqulize
 	if (hist_eqlize_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			HistEqualize(res[idx], res);
+		HistEqualize(res[0], res);
 	}
 	// MeanNormalize
 	if (mean_normalization_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			MeanNormalize(res[idx], res);
+		MeanNormalize(res[0], res);
 	}
 	// Rotate
 	if (rotate_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			Rotate(res[idx], res, rtt_min_, rtt_max_);
+		Rotate(res[0], res, rtt_min_, rtt_max_);
 	}
 	// vertical move
 	if (v_move_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			VMove(res[idx], res, v_min_, v_max_);
+		VMove(res[0], res, v_min_, v_max_);
 	}
 	// horizontal move
 	if (h_move_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			VMove(res[idx], res, h_min_, h_max_);
+		VMove(res[0], res, h_min_, h_max_);
 	}
 	// change channel
 	if (exchange_chan_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			ChangeChannel(res[idx], res);
+		ChangeChannel(res[0], res);
 	}
 	// vertical flip
 	if (v_flip_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			VFlip(res[idx], res);
+		VFlip(res[0], res);
 	}
 	// vertical flip
 	if (h_flip_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			HFlip(res[idx], res);
+		HFlip(res[0], res);
 	}
 	// apply noise
 	if (!noises_.empty())
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			ApplyNoise(res[idx], res, noises_);
+		ApplyNoise(res[0], res, noises_);
 	}
 	// resize
 	if (resize_ == true)
 	{
-		tmp_sz = res.size();
-		for (size_t idx = 0; idx < tmp_sz; ++idx)
-			Resize(res[idx], res, rsz_min_, rsz_max_);
+		Resize(res[0], res, rsz_min_, rsz_max_);
 	}
 
 	return;
@@ -518,22 +513,19 @@ ImageGenerator::gen(cv::Mat & src, std::vector<cv::Mat>& res)
 void ImageGenerator::debug_gen(cv::Mat & src, std::vector<cv::Mat>& res)
 {
 	// DEBUGGING
-	// HistEqualize(src, res);   TEST GOOD!
-	// MeanNormalize(src, res);  TEST GOOD!
-	// Rotate(src, res, rtt_min_, rtt_max_);	TEST GOOD!
-	// VMove(src, res, -100, 0);				TEST OK, Check if you need a fix size of image
-	// HMove(src, res, 10, 100);				TEST OK, Check if you need a fix size of image
-	// ChangeChannel(src, res);	 TEST GOOD!
-	// VFlip(src, res);			 TEST GOOD!
-	// HFlip(src, res);			 TEST GOOD!
+	// Rotate(src, res, rtt_min_, rtt_max_);
+	// VMove(src, res, -100, 0);				
+	// HMove(src, res, 10, 100);
+	// VFlip(src, res);
+	// HFlip(src, res);
+	// Resize(src, res, 0.5, 2.0);	
 
-	/*	TEST GOOD!
-		std::vector<std::shared_ptr<Noise>> n;
-		std::shared_ptr<Noise> g_n(new PeriodicNoise(false));
-		n.push_back(g_n);
-		ApplyNoise(src, res, n);
-	*/
+	//HistEqualize(src, res);
+	//MeanNormalize(src, res);
+	//ChangeChannel(src, res);
 
-
-	// Resize(src, res, 0.5, 2.0);	TEST GOOD!
+	//std::vector<std::shared_ptr<Noise>> n;
+	//std::shared_ptr<Noise> g_n(new GaussianNoise());
+	//n.push_back(g_n);
+	//ApplyNoise(src, res, n);
 }
